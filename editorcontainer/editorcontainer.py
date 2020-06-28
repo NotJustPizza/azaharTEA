@@ -7,10 +7,12 @@ editorcontainer
 Module that contains all that's necessary to create
 the file tabs
 """
-
+import base64
 import os
 import math
 
+from Crypto.Cipher import AES
+from Crypto.Hash import SHA256
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import ObjectProperty
 from kivy.properties import StringProperty
@@ -407,7 +409,7 @@ class EditorContainer(TabbedPanel):
         
         self.build_tab(self.default_tab_file_path, self.default_tab_mimetype)
 
-    def build_tab(self, file_path = None, mime_type = None):
+    def build_tab(self, file_path = None, mime_type = None, password = None):
         """Build a tab.
         
         The tab will have a path file_path and a mimetype mimetype.
@@ -430,9 +432,12 @@ class EditorContainer(TabbedPanel):
         if file_path is not None:
 
             try:
-                   
                 with open(file_path) as file:
-                    text = file.read()                            
+                    if password:
+                        data = file.read()
+                        text = self.decrypt(data, password)
+                    else:
+                        text = file.read()
                         
             except PermissionError as err:
                 print(err, "You don't have the required access rights"
@@ -502,6 +507,25 @@ class EditorContainer(TabbedPanel):
         rc_menu.editor = self.current_tab.content.editor
         
         Window.add_widget(rc_menu)
+
+    """
+    Return encrypted string that can be decrypted using same password
+    """
+    def decrypt(self, data, password):
+        key = SHA256.new(password.encode('utf-8')).digest()
+        data = base64.b64decode(data.encode("latin-1"))
+        IV = data[:AES.block_size]
+        decryptor = AES.new(key, AES.MODE_CBC, IV)
+
+        # Decrypt
+        data = decryptor.decrypt(data[AES.block_size:])
+        # Remove padding
+        data = data[:-data[-1]]
+        # Decode
+        text = data.decode('utf-8')
+
+        return text
+
                                                                   
 class EditorTab(TabbedPanelHeader):
     """Tab header of a tab to add to the :py:class:`.EditorContainer`.

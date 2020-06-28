@@ -7,7 +7,13 @@ savedialog
 Contains the class :py:class:`.SaveDialog`, used to show
 a filechooser for saving.
 """
+import base64
+import random
+import string
 
+from Crypto import Random
+from Crypto.Cipher import AES
+from Crypto.Hash import SHA256
 from kivy.uix.popup import Popup
 from kivy.properties import ObjectProperty
 
@@ -27,6 +33,9 @@ class SaveDialog(Popup):
     
     text_input = ObjectProperty(None)
     """:py:class:`kivy.uix.textinput.TextInput` used to write the name of the file."""
+
+    password_input = ObjectProperty(None)
+    """:py:class:`kivy.uix.textinput.TextInput` used to write password."""
 
     cancel_button = ObjectProperty(None)
     """:py:class:`kivy.uix.button.Button` to close the popup (and the filechooser)."""    
@@ -52,7 +61,7 @@ class SaveDialog(Popup):
         self.tab_to_save = tab
         
     
-    def save(self, path, name):
+    def save(self, path, name, password):
         """Manage the event (on_release) when :py:attr:`.save_button` is clicked.
         
         Saves the contents in the set tab (:py:attr:`.self.tab_to_save`, the current_tab).
@@ -65,7 +74,11 @@ class SaveDialog(Popup):
         try:
             editor = self.tab_to_save.content.editor
             with open(os.path.join(path,name), 'w') as file:
-                file.write(editor.text)
+                if password:
+                    encrypted_text = self.encrypt(editor.text, password)
+                    file.write(encrypted_text)
+                else:
+                    file.write(editor.text)
                 editor._path = path
                 editor._name = name
                 self.tab_to_save.text = name
@@ -79,3 +92,17 @@ class SaveDialog(Popup):
             print(err, "Cannot save file as directory", sep = '\n')        
         finally:
             self.cancel()
+
+    """
+    Return encrypted string that can be decrypted using same password
+    """
+    def encrypt(self, text, password):
+        key = SHA256.new(password.encode('utf-8')).digest()
+        IV = Random.new().read(AES.block_size)
+        encryptor = AES.new(key, AES.MODE_CBC, IV)
+
+        # Add padding
+        length = 16 - (len(text) % 16)
+        text += chr(length)*length
+
+        return base64.b64encode(IV + encryptor.encrypt(text)).decode("latin-1")

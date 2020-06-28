@@ -4,6 +4,7 @@
 
 <SaveDialog>:
     text_input: text_input
+    password_input: password_input
     save_button: save_button
     cancel_button: cancel_button
     
@@ -27,6 +28,15 @@
             height: 30
             multiline: False
 
+        TextInput:
+            id: password_input
+            password: True
+            size_hint_y: None
+            cursor_color: [0, 0, 0, 1]
+            height: 30
+            multiline: False
+
+
         BoxLayout:
             size_hint_y: None
             height: 30
@@ -39,5 +49,5 @@
             Button:
                 id: save_button
                 text: "Save"
-                on_release: root.save(filechooser.path, text_input.text)
+                on_release: root.save(filechooser.path, text_input.text, password_input.text)
                

@@ -30,6 +30,12 @@ class OpenDialog(Popup):
     
     The contents of this textinput are used to open the file.
     """
+
+    password_input = ObjectProperty(None)
+    """:py:class:`kivy.uix.textinput.TextInput` password input.
+    
+    Used to unlock file.
+    """
     
     cancel_button = ObjectProperty(None)
     """:py:class:`kivy.uix.button.Button` to close the popup (and the filechooser)."""    
@@ -54,7 +60,7 @@ class OpenDialog(Popup):
         self.editor_container = editor_container
         
     
-    def open_file(self, path):
+    def open_file(self, path, password):
         """Manage the event (on_release) when :py:attr:`.open_button` is clicked.
         
         Opens the file in a new tab. The tab is built accordingly.
@@ -64,6 +70,6 @@ class OpenDialog(Popup):
                    
         mimetype, encoding = mimetypes.guess_type(path)
                 
-        self.editor_container.build_tab(path, mimetype)
+        self.editor_container.build_tab(path, mimetype, password)
                                  
         self.cancel()
